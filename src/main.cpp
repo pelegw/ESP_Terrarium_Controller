@@ -7,11 +7,22 @@
 #include <ModbusIP_ESP8266.h>
 #include "custom_time.h"
 
+
+//global vars
+hw_timer_t *timer = NULL;
+bool has_expired = false;
+
+
+
  #define DS13074_CS_PIN 10
  //#define INTERRUPT_PIN 2 // DeadOn RTC SQW/interrupt pin (optional)
 
 //Modbus Variables
 ModbusIP mb;
+
+void IRAM_ATTR timerInterrupcion() {
+ has_expired = true;
+}
 
 void setup() {
   Serial.begin(115200);
@@ -36,7 +47,11 @@ void setup() {
   rtc.begin(DS13074_CS_PIN);
   rtc.autoTime();
   rtc.update();
-  //rtc.setAlarm1(30);
+  rtc.setAlarm1(30);
+
+  //setup internal timers
+  timer = timerBegin(0, 80, true);
+  timerAttachInterrupt(timer, &timerInterrupcion, true); // Attach the interrupt handling function - terrarium pump interrupt
 
   //SetUp Modbus Server
   mb.onConnect(cbConn);
@@ -61,9 +76,20 @@ void loop() {
   if (rtc.alarm1())
     {
       Serial.println("ALARM 1!");
+       timerRestart(timer);    
+      timerAlarmWrite(timer, 25000000, false); // Interrupt every 25 seconds
+      timerAlarmEnable(timer); // Enable the alarm
       // Re-set the alarm for when s=30:
       rtc.setAlarm1(30);
     }
+  
+  if(has_expired) //interrupt called
+  {
+     // Tasks to perform when the Timer interrupt is triggered
+    Serial.println("20 Seconds Timer exapired!");
+    has_expired = false; 
+    
+  }
 
 }
 
