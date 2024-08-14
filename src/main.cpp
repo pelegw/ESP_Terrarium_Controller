@@ -3,18 +3,15 @@
 #include <SPI.h>
 #include <SparkFunDS3234RTC.h>
 #include "config.h"
-
-
+#include "modbus.h"
+#include <ModbusIP_ESP8266.h>
+#include "custom_time.h"
 
  #define DS13074_CS_PIN 10
  //#define INTERRUPT_PIN 2 // DeadOn RTC SQW/interrupt pin (optional)
 
-
 //Modbus Variables
-
-// put function declarations here:
-//nt myFunction(int, int);
-void printTime();
+ModbusIP mb;
 
 void setup() {
   Serial.begin(115200);
@@ -39,7 +36,15 @@ void setup() {
   rtc.begin(DS13074_CS_PIN);
   rtc.autoTime();
   rtc.update();
-  rtc.setAlarm1(30);
+  //rtc.setAlarm1(30);
+
+  //SetUp Modbus Server
+  mb.onConnect(cbConn);
+  mb.server();
+  mb.addCoil(FAN_ON_COIL);
+  mb.addCoil(FAN_OFF_COIL);
+  mb.onSetCoil(FAN_ON_COIL, cbFanOn); // Add callback on Coil FAN COILs value set - enable us to control the fan via coil
+  mb.onSetCoil(FAN_OFF_COIL, cbFanOff); // Add callback on Coil FAN COILs value set - enable us to control the fan via coil
 
 }
 
@@ -49,8 +54,8 @@ void loop() {
   if (rtc.second() != lastSecond) // If the second has changed
   {
     printTime(); // Print the new time
-    
-    lastSecond = rtc.second(); // Update lastSecond value
+        lastSecond = rtc.second(); // Update lastSecond value
+        mb.task();
   }
 
   if (rtc.alarm1())
@@ -62,37 +67,3 @@ void loop() {
 
 }
 
-// put function definitions here:
-void printTime()
-{
-  Serial.print(String(rtc.hour()) + ":"); // Print hour
-  if (rtc.minute() < 10)
-    Serial.print('0'); // Print leading '0' for minute
-  Serial.print(String(rtc.minute()) + ":"); // Print minute
-  if (rtc.second() < 10)
-    Serial.print('0'); // Print leading '0' for second
-  Serial.print(String(rtc.second())); // Print second
-
-  if (rtc.is12Hour()) // If we're in 12-hour mode
-  {
-    // Use rtc.pm() to read the AM/PM state of the hour
-    if (rtc.pm()) Serial.print(" PM"); // Returns true if PM
-    else Serial.print(" AM");
-  }
-  
-  Serial.print(" | ");
-
-  // Few options for printing the day, pick one:
-  Serial.print(rtc.dayStr()); // Print day string
-  //Serial.print(rtc.dayC()); // Print day character
-  //Serial.print(rtc.day()); // Print day integer (1-7, Sun-Sat)
-  Serial.print(" - ");
-#ifdef PRINT_USA_DATE
-  Serial.print(String(rtc.month()) + "/" +   // Print month
-                 String(rtc.date()) + "/");  // Print date
-#else
-  Serial.print(String(rtc.date()) + "/" +    // (or) print date
-                 String(rtc.month()) + "/"); // Print month
-#endif
-  Serial.println(String(rtc.year()));        // Print year
-}
