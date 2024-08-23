@@ -2,6 +2,7 @@
 #include "sht31.h"
 
 float getTemp(Adafruit_SHT31 *sht) {
+  
   float tmp = sht->readTemperature();
   if (! isnan(tmp)) {  // check if 'is not a number'
    Serial.print("Temp *C = "); Serial.print(tmp); Serial.print("\t\t");

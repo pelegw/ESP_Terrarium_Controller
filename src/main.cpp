@@ -13,10 +13,11 @@
 #include "pump_schedule.h"
 #include <PubSubClient.h>
 #include <stdint.h>
-
+#include "helpers.h"
 //#include "outputs.h"
 
-//global vars
+//global vars that I can't define in config.h
+bool sht_status;
 hw_timer_t *timer = NULL;
 bool has_expired = false;
 float my_hum,my_temp;
@@ -40,6 +41,7 @@ void IRAM_ATTR timerInterrupcion() {
 /************************Setup Function - Quite  alot of stuff here for the controller to prepare ******************************************************/
 void setup() {
   Serial.begin(115200);
+  int counter;
   //Set Relays to Off
   pinMode(PUMP_RELAY, OUTPUT);
   pinMode(FAN_RELAY_PIN, OUTPUT);
@@ -92,14 +94,17 @@ void setup() {
   mb.addCoil(FAN_OFF_COIL);
   mb.onSetCoil(FAN_ON_COIL, cbFanOn); // Add callback on Coil FAN COILs value set - enable us to control the fan via coil
   mb.onSetCoil(FAN_OFF_COIL, cbFanOff); // Add callback on Coil FAN COILs value set - enable us to control the fan via coil
-  mb.addHreg(SHT_HUMIDITY,0xABCA );
-  mb.addHreg(SHT_TEMP,0xABCB );
+  mb.addHreg(SHT_HUMIDITY_MSB,0xABCA );
+  mb.addHreg(SHT_HUMIDITY_LSB,0xABCA );
+  mb.addHreg(SHT_TEMP_MSB,0xABCB );
+  mb.addHreg(SHT_TEMP_LSB,0xABCB );
   mb.addHreg(TANK_DEPTH,0xABCC );
   mb.addHreg(FAN_STATUS,0xABCD );
   mb.addCoil(FAN_STATUS);
   mb.addCoil(PUMP_COIL);
   mb.addCoil(LIGHT_COIL_1);
   mb.addCoil(LIGHT_COIL_2);
+  //
   
   //setup MQTT
   client.setServer(mqtt_broker, mqtt_port);
@@ -119,13 +124,27 @@ void setup() {
   client.publish(topic, "Terrarium Controller Logged In");
   client.subscribe(topic);
 
+  //setup SHT31
+  Serial.println("SHT31 test");
+  counter=0;
+  if (! sht31.begin(0x44)) {
+    Serial.println("Couldn't find SHT31");
+    sht_status = false;
+  }
+  else {
+    sht_status = true;
+  }
+
+
 }
 /*******************************************************************************END OF SETUP*****************************************************/
 
 void loop() {
   //The basic loop consits of two functions - getSensors() which reads all the sensors, and setOutputs() which sets the outputs based on sensors (some outputs are set in an interrupt handler as they need to be handled in a timely manner)
   mb.task();
+  Serial.println("1");
   getSensors();
+  Serial.println("2");
   Serial.print("Hum. % = "); Serial.println(my_hum);
   Serial.print("Temp = "); Serial.println(my_temp);
   setOutputs() ;
@@ -139,8 +158,16 @@ void loop() {
 
 /************************************************************************** Helper Functions ***********************************************************/
 void getSensors() {
+    Serial.println("Getting Sensors");
+    if (sht_status) {
     my_hum = getHumidity(&sht31);
     my_temp = getTemp(&sht31);
+    }
+    else {
+      my_hum = 0.0;
+      my_temp = 0.0;
+    }
+    Serial.println("Got Sensors");
 }
 
 void setOutputs() {
@@ -149,8 +176,10 @@ void setOutputs() {
 
   hum_whole = (uint16_t)my_hum;
   temp_whole = (uint16_t)my_temp;
-  mb.Hreg(SHT_HUMIDITY,hum_whole);
-  mb.Hreg(SHT_TEMP,temp_whole);
+  mb.Hreg(SHT_HUMIDITY_LSB,f_2uint_int2(my_hum));
+  mb.Hreg(SHT_HUMIDITY_MSB,f_2uint_int1(my_hum));
+  mb.Hreg(SHT_TEMP_LSB ,f_2uint_int2(my_temp));
+  mb.Hreg(SHT_TEMP_MSB ,f_2uint_int1(my_temp));
   if (digitalRead(FAN_RELAY_PIN)==HIGH) {
     
   }
