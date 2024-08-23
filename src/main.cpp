@@ -142,11 +142,7 @@ void setup() {
 void loop() {
   //The basic loop consits of two functions - getSensors() which reads all the sensors, and setOutputs() which sets the outputs based on sensors (some outputs are set in an interrupt handler as they need to be handled in a timely manner)
   mb.task();
-  Serial.println("1");
   getSensors();
-  Serial.println("2");
-  Serial.print("Hum. % = "); Serial.println(my_hum);
-  Serial.print("Temp = "); Serial.println(my_temp);
   setOutputs() ;
   delay(1000);
 
