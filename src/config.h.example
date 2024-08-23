@@ -1,0 +1,43 @@
+//Global Config Variables
+#include <stdint.h>
+
+//Config WiFi Creds
+const char* ssid = "";
+const char* password = "";
+
+const char* mqtt_broker  = "";
+const char *topic = "";
+const int mqtt_port = ;
+const char *mqtt_username = "";
+const char *mqtt_password = "";
+
+//Modbus Config - note that addresses are offsets and not absolute also note that they are 0 based - adjust for that in the HMI
+//coils
+const int FAN_ON_COIL = 100;
+const int FAN_OFF_COIL = 101;
+const int FAN_STATUS = 105;
+const int PUMP_COIL = 102;
+const int LIGHT_COIL_1 = 103;
+const int LIGHT_COIL_2 = 103;
+const int LED_COIL = 104;
+
+//registers
+const uint16_t SHT_HUMIDITY_LSB = 100;
+const uint16_t SHT_HUMIDITY_MSB = 101;
+const uint16_t SHT_TEMP_LSB = 102;
+const uint16_t SHT_TEMP_MSB = 103;
+const uint16_t TANK_DEPTH = 102;
+
+
+const char* ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = 7200;
+const int daylightOffset_sec = 3600;
+
+
+
+//Set Relays
+const int FAN_RELAY_PIN = 3;
+const int LIGHT_RELAY_PIN_1 = 4;
+const int LIGHT_RELAY_PIN_2 = 5;
+const int PUMP_RELAY = 6;
+const int LED_RELAY = 7;
