@@ -29,3 +29,11 @@ uint16_t cbFanOff(TRegister* reg, uint16_t val) {
   }
   return val;
 }
+
+
+uint16_t cbRead(TRegister *reg, uint16_t val)
+{
+  Serial.print(val);
+  digitalWrite(22, HIGH);
+  return val;
+}

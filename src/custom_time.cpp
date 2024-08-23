@@ -33,5 +33,5 @@ void printTime()
   Serial.print(String(rtc.date()) + "/" +    // (or) print date
                  String(rtc.month()) + "/"); // Print month
 #endif
-  Serial.println(String(rtc.year()));        // Print year
+  Serial.print(String(rtc.year()));        // Print year
 }
